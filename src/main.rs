@@ -179,11 +179,11 @@ fn handle_keyboard_event(event: LibinputEvent, states: &mut HashMap<u32, Keyboar
 }
 
 fn handle_dbus_message(msg: &Message, b_bindings: &mut HashMap<u32, Option<String>>) {
-    println!(
-        "(fswitcher) D-Bus(a) Event: {:?} at{:?}",
-        msg.header().member().unwrap().as_str(),
-        msg.header().path().unwrap().as_str()
-    );
+    // println!(
+    //     "(fswitcher) D-Bus(a) Event: {:?} at{:?}",
+    //     msg.header().member().unwrap().as_str(),
+    //     msg.header().path().unwrap().as_str()
+    // );
     if let (Some(member), Some(interface), Some(path)) = (
         msg.header().member(),
         msg.header().interface(),
@@ -198,14 +198,36 @@ fn handle_dbus_message(msg: &Message, b_bindings: &mut HashMap<u32, Option<Strin
                 && member.as_str() == "activate");
 
         if is_focus_event {
-            println!("(fswitcher) D-Bus(a) signal: {}.{}", interface, member);
+            println!(
+                "(fswitcher) D-Bus(a) signal: {} -> {}",
+                member,
+                path.as_str()
+            );
 
             // Your existing "push-down queue" logic
-            if b_bindings.get(&1).is_some() && b_bindings.get(&8195).is_some() {
-                b_bindings.insert(8195, b_bindings.get(&1).unwrap().clone());
-                b_bindings.insert(1, Some(path.to_string()));
-            } else if b_bindings.get(&1).is_none() && b_bindings.get(&8195).is_none() {
-                b_bindings.insert(8195, Some(path.to_string()));
+            if b_bindings.get(&1).unwrap().is_some() && b_bindings.get(&8195).unwrap().is_some() {
+                if b_bindings
+                    .get(&1)
+                    .and_then(|v| v.as_ref())
+                    .cloned()
+                    .unwrap()
+                    != path.as_str()
+                {
+                    b_bindings.insert(8195, b_bindings.get(&1).unwrap().clone());
+                    b_bindings.insert(1, Some(path.to_string()));
+                }
+            } else if b_bindings.get(&1).unwrap().is_some()
+                && b_bindings.get(&8195).unwrap().is_none()
+            {
+                if b_bindings
+                    .get(&1)
+                    .and_then(|v| v.as_ref())
+                    .cloned()
+                    .unwrap()
+                    != path.as_str()
+                {
+                    b_bindings.insert(8195, Some(path.to_string()));
+                }
             } else {
                 b_bindings.insert(1, Some(path.to_string()));
             }
